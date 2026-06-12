@@ -11,7 +11,7 @@ let io: SocketServer;
 export const initSocket = (httpServer: HttpServer): SocketServer => {
   io = new SocketServer(httpServer, {
     cors: {
-      origin: process.env.NEXT_URL || 'http://localhost:3000',
+      origin: process.env.CLIENT_URL || 'http://localhost:3000',
       credentials: true,
       methods: ['GET', 'POST'],
     },
