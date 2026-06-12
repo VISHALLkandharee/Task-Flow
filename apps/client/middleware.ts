@@ -8,7 +8,9 @@ const authRoutes = ['/login', '/register'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const accessToken = request.cookies.get('access_token')?.value;
+  const accessToken =
+    request.cookies.get('user_session_active')?.value ||
+    request.cookies.get('access_token')?.value;
 
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)

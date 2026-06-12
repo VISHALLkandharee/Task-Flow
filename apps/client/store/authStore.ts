@@ -36,8 +36,12 @@ export const useAuthStore = create<AuthState>()(
       workspaces: [],
       isAuthenticated: false,
 
-      setUser: (user) =>
-        set({ user, isAuthenticated: true }),
+      setUser: (user) => {
+        if (typeof window !== 'undefined') {
+          document.cookie = "user_session_active=true; path=/; max-age=604800; SameSite=Lax; Secure";
+        }
+        set({ user, isAuthenticated: true });
+      },
 
       setWorkspace: (workspace) =>
         set({ workspace }),
@@ -55,6 +59,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        if (typeof window !== 'undefined') {
+          document.cookie = "user_session_active=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
         set({
           user: null,
           workspace: null,
