@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,6 +7,7 @@ import { X } from "lucide-react";
 import { TaskStatus, Priority } from "@/lib/api/tasks";
 import { useCreateTask } from "@/hooks/useTasks";
 import { useMembers } from "@/hooks/useMembers";
+import { useToastStore } from "@/store/toastStore";
 
 const CreateTaskSchema = z.object({
   title: z.string().min(1, "Title is required").max(100),
@@ -32,9 +32,8 @@ export default function CreateTaskModal({
   projectId,
   defaultStatus,
 }: Props) {
-  const [serverError, setServerError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { mutate: createTask } = useCreateTask(projectId);
+  const addToast = useToastStore((state) => state.addToast);
+  const { mutate: createTask, isPending } = useCreateTask(projectId);
 
   // Fetch workspace members for assignee dropdown
   const { data: members } = useMembers();
@@ -49,41 +48,33 @@ export default function CreateTaskModal({
     defaultValues: { priority: "MEDIUM" },
   });
 
-  const onSubmit = async (data: CreateTaskInput) => {
-    try {
-      setIsLoading(true);
-      setServerError("");
-
-      createTask(
-        {
-          title: data.title,
-          description: data.description,
-          priority: data.priority as Priority,
-          dueDate: data.dueDate,
-          assigneeId: data.assigneeId || undefined,
-          status: defaultStatus,
-          projectId,
+  const onSubmit = (data: CreateTaskInput) => {
+    createTask(
+      {
+        title: data.title,
+        description: data.description,
+        priority: data.priority as Priority,
+        dueDate: data.dueDate,
+        assigneeId: data.assigneeId || undefined,
+        status: defaultStatus,
+        projectId,
+      },
+      {
+        onError: (error: any) => {
+          const errMsg =
+            error.response?.data?.error?.message ||
+            error.response?.data?.message ||
+            "Failed to create task";
+          addToast(errMsg, "error");
         },
-        {
-          onSuccess: () => {
-            reset();
-            onClose();
-          },
-          onError: (error: any) => {
-            setServerError(
-              error.response?.data?.error?.message || "Failed to create task",
-            );
-          },
-        },
-      );
-    } finally {
-      setIsLoading(false);
-    }
+      },
+    );
+    reset();
+    onClose();
   };
 
   const handleClose = () => {
     reset();
-    setServerError("");
     onClose();
   };
 
@@ -112,15 +103,6 @@ export default function CreateTaskModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-          {serverError && (
-            <div
-              className="bg-red-50 border border-red-200 text-red-600
-            text-sm rounded-lg p-3"
-            >
-              {serverError}
-            </div>
-          )}
-
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -233,13 +215,13 @@ export default function CreateTaskModal({
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isPending}
               className="flex-1 px-4 py-2 bg-indigo-600 text-white
               rounded-lg text-sm font-medium hover:bg-indigo-700
               disabled:opacity-50 disabled:cursor-not-allowed
               transition-colors"
             >
-              {isLoading ? "Creating..." : "Create Task"}
+              {isPending ? "Creating..." : "Create Task"}
             </button>
           </div>
         </form>

@@ -8,7 +8,7 @@ import { X } from "lucide-react";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+import { useToastStore } from "@/store/toastStore";
 
 const CreateProjectSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50),
@@ -39,13 +39,7 @@ export default function CreateProjectModal({ isOpen, onClose }: Props) {
   const { workspace } = useAuthStore();
   const { mutate: createProject, isPending } = useCreateProject();
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
-  const [serverError, setServerError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const isFreePlanError =
-    serverError.includes("Free plan") ||
-    serverError.includes("3 projects") ||
-    serverError.includes("Upgrade");
+  const addToast = useToastStore((state) => state.addToast);
 
   const {
     register,
@@ -57,7 +51,6 @@ export default function CreateProjectModal({ isOpen, onClose }: Props) {
   });
 
   const onSubmit = (data: CreateProjectInput) => {
-    setServerError("");
     createProject(
       {
         name: data.name,
@@ -66,25 +59,22 @@ export default function CreateProjectModal({ isOpen, onClose }: Props) {
         workspaceId: workspace!.id,
       },
       {
-        onSuccess: () => {
-          reset();
-          setSelectedColor(COLORS[0]);
-          onClose();
-        },
         onError: (error: any) => {
-          setServerError(
+          const errMsg =
             error.response?.data?.error?.message ||
-              error.response?.data?.message ||
-              "Failed to create project",
-          );
+            error.response?.data?.message ||
+            "Failed to create project";
+          addToast(errMsg, "error");
         },
       },
     );
+    reset();
+    setSelectedColor(COLORS[0]);
+    onClose();
   };
 
   const handleClose = () => {
     reset();
-    setServerError("");
     onClose();
   };
 
@@ -118,24 +108,6 @@ export default function CreateProjectModal({ isOpen, onClose }: Props) {
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-          {/* Server error */}
-          {serverError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-red-600 text-sm">{serverError}</p>
-              {/* Show upgrade link if it's a plan limit error */}
-              {isFreePlanError && (
-                <Link
-                  href="/billing"
-                  onClick={handleClose}
-                  className="inline-flex items-center gap-1 text-indigo-600
-                  font-medium hover:underline text-xs mt-2"
-                >
-                  Upgrade to Pro for unlimited projects →
-                </Link>
-              )}
-            </div>
-          )}
-
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
