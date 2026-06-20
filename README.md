@@ -21,7 +21,6 @@ User authentication & role-aware UI (if enabled)
 Export/import tasks and CSV export
 Responsive design: desktop + mobile
 Deployed to Vercel for instant sharing with clients
-Screenshots (replace placeholders with real images in /assets/) ![Dashboard (placeholder)](./assets/tf-1.png)
 
 
 Technology:
