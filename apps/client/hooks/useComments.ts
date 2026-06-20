@@ -5,7 +5,7 @@ export function useComments(taskId: string | null) {
   return useQuery({
     queryKey: ['comments', taskId],
     queryFn: () => commentsApi.getAll(taskId!),
-    enabled: !!taskId,
+    enabled: !!taskId && !taskId.startsWith('temp-'),
     staleTime: 30_000,
   });
 }

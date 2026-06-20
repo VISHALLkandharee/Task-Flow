@@ -721,9 +721,23 @@ export default function TaskDetailModal({
 function CommentsSection({ taskId }: { taskId: string }) {
   const [content, setContent] = useState("");
   const { user } = useAuthStore();
+  const isOptimistic = taskId.startsWith("temp-");
   const { data: comments, isLoading } = useComments(taskId);
   const { mutate: createComment, isPending } = useCreateComment(taskId);
   const { mutate: deleteComment } = useDeleteComment(taskId);
+
+  if (isOptimistic) {
+    return (
+      <div>
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+          Comments (0)
+        </label>
+        <p className="text-xs text-gray-400 text-center py-4 bg-gray-50 rounded-lg border border-gray-200">
+          Saving task on server... You can comment once saved.
+        </p>
+      </div>
+    );
+  }
 
   const submitComment = () => {
     if (!content.trim()) return;

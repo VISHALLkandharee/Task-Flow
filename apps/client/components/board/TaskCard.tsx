@@ -8,6 +8,7 @@ import {
   Trash2,
   AlertCircle,
   GripVertical,
+  Loader2,
 } from "lucide-react";
 import { Task } from "@/lib/api/tasks";
 import { cn } from "@/lib/utils";
@@ -26,10 +27,13 @@ const PRIORITY_STYLES = {
 };
 
 export default function TaskCard({ task, onDelete, onClick }: Props) {
+  const isOptimistic = task.id.startsWith("temp-");
+
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: task.id,
       data: { task },
+      disabled: isOptimistic,
     });
 
   const style = transform
@@ -50,22 +54,29 @@ export default function TaskCard({ task, onDelete, onClick }: Props) {
         "hover:shadow-md transition-shadow select-none group",
         "flex items-stretch",
         isDragging && "opacity-50 shadow-lg rotate-2 z-50",
+        isOptimistic && "opacity-60 bg-gray-50/50 border-dashed pointer-events-none"
       )}
     >
       {/* ── Drag handle — left strip ── */}
       <div
-        {...listeners}
-        {...attributes}
-        className="flex items-center px-1.5 cursor-grab
-        active:cursor-grabbing text-gray-300 hover:text-gray-400
-        hover:bg-gray-50 rounded-l-lg transition-colors"
+        {...(isOptimistic ? {} : { ...listeners, ...attributes })}
+        className={cn(
+          "flex items-center px-1.5 rounded-l-lg transition-colors",
+          isOptimistic
+            ? "text-indigo-500 bg-indigo-50/20"
+            : "cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 hover:bg-gray-50"
+        )}
       >
-        <GripVertical size={14} />
+        {isOptimistic ? (
+          <Loader2 size={12} className="animate-spin shrink-0" />
+        ) : (
+          <GripVertical size={14} />
+        )}
       </div>
 
       {/* ── Card content — clickable ── */}
       <div
-        onClick={() => onClick(task)}
+        onClick={() => !isOptimistic && onClick(task)}
         className="flex-1 p-3 cursor-pointer min-w-0"
       >
         {/* Priority + Delete */}
@@ -78,18 +89,20 @@ export default function TaskCard({ task, onDelete, onClick }: Props) {
           >
             {task.priority}
           </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (confirm("Delete this task?")) {
-                onDelete(task.id);
-              }
-            }}
-            className="opacity-0 group-hover:opacity-100 text-gray-400
-            hover:text-red-500 transition-all p-0.5 rounded"
-          >
-            <Trash2 size={13} />
-          </button>
+          {!isOptimistic && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm("Delete this task?")) {
+                  onDelete(task.id);
+                }
+              }}
+              className="opacity-0 group-hover:opacity-100 text-gray-400
+              hover:text-red-500 transition-all p-0.5 rounded"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
         </div>
 
         {/* Title */}
@@ -150,3 +163,5 @@ export default function TaskCard({ task, onDelete, onClick }: Props) {
     </div>
   );
 }
+
+

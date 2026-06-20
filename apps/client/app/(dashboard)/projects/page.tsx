@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, FolderKanban, Loader2 } from "lucide-react";
 import { useProjects, useDeleteProject } from "@/hooks/useProjects";
 import CreateProjectModal from "@/components/projects/CreateProjectModel";
+import { cn } from "@/lib/utils";
 
 export default function ProjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,68 +74,84 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects?.map((project) => (
-            <div
-              key={project.id}
-              className="bg-white rounded-xl border border-gray-200
-              p-5 hover:shadow-md transition-shadow group"
-            >
-              {/* Color bar */}
+          {projects?.map((project) => {
+            const isOptimistic = project.id.startsWith("temp-");
+            return (
               <div
-                className="w-full h-1.5 rounded-full mb-4"
-                style={{ backgroundColor: project.color }}
-              />
+                key={project.id}
+                className={cn(
+                  "bg-white rounded-xl border border-gray-200 p-5 transition-all group",
+                  isOptimistic
+                    ? "opacity-60 bg-gray-50/50 border-dashed pointer-events-none shadow-none"
+                    : "hover:shadow-md"
+                )}
+              >
+                {/* Color bar */}
+                <div
+                  className="w-full h-1.5 rounded-full mb-4"
+                  style={{ backgroundColor: project.color }}
+                />
 
-              {/* Project info */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: project.color }}
-                  />
-                  <h3 className="font-semibold text-gray-900 truncate">
-                    {project.name}
-                  </h3>
+                {/* Project info */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: project.color }}
+                    />
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {project.name}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {project.description && (
+                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                    {project.description}
+                  </p>
+                )}
+
+                {/* Task count */}
+                <p className="text-xs text-gray-400 mb-4">
+                  {project._count?.tasks || 0} task
+                  {project._count?.tasks !== 1 ? "s" : ""}
+                </p>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  {isOptimistic ? (
+                    <span className="flex-1 text-center px-3 py-1.5 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5">
+                      <Loader2 className="animate-spin text-gray-400" size={12} />
+                      Saving project...
+                    </span>
+                  ) : (
+                    <>
+                      <Link
+                        href={`/projects/${project.id}`}
+                        className="flex-1 text-center px-3 py-1.5 bg-indigo-50
+                        text-indigo-700 rounded-lg text-xs font-medium
+                        hover:bg-indigo-100 transition-colors"
+                      >
+                        Open Board
+                      </Link>
+                      <button
+                        onClick={() => {
+                          if (confirm("Delete this project?")) {
+                            deleteProject(project.id);
+                          }
+                        }}
+                        className="px-3 py-1.5 text-red-500 hover:bg-red-50
+                        rounded-lg text-xs font-medium transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
-
-              {/* Description */}
-              {project.description && (
-                <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                  {project.description}
-                </p>
-              )}
-
-              {/* Task count */}
-              <p className="text-xs text-gray-400 mb-4">
-                {project._count?.tasks || 0} task
-                {project._count?.tasks !== 1 ? "s" : ""}
-              </p>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <Link
-                  href={`/projects/${project.id}`}
-                  className="flex-1 text-center px-3 py-1.5 bg-indigo-50
-                  text-indigo-700 rounded-lg text-xs font-medium
-                  hover:bg-indigo-100 transition-colors"
-                >
-                  Open Board
-                </Link>
-                <button
-                  onClick={() => {
-                    if (confirm("Delete this project?")) {
-                      deleteProject(project.id);
-                    }
-                  }}
-                  className="px-3 py-1.5 text-red-500 hover:bg-red-50
-                  rounded-lg text-xs font-medium transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

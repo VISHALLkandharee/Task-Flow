@@ -29,7 +29,7 @@ export const emailWorker = new Worker(
             <p style="color: #6b7280;">
               ${inviterName} has invited you to collaborate on TaskFlow.
             </p>
-            
+            <a
               href="${inviteUrl}"
               style="
                 display: inline-block;
@@ -72,7 +72,7 @@ export const emailWorker = new Worker(
             <p style="color: #6b7280;">
               Start by creating your first project and inviting your team.
             </p>
-            
+            <a
               href="${BASE_URL}/dashboard"
               style="
                 display: inline-block;
