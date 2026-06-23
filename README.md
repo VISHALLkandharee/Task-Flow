@@ -308,8 +308,8 @@ Task-Flow/
 
 **Vishal Kandharee**
 
-- Email: [your.email@example.com](mailto:your.email@example.com)
-- LinkedIn: [linkedin.com/in/your-profile](https://linkedin.com/in/your-profile)
+- Email: [your.email@example.com](vishall.kandharee@gmail.com)
+- LinkedIn: [linkedin.com/in/your-profile](https://www.linkedin.com/in/vishal-kumar-87a19730b/)
 - GitHub: [@VISHALLkandharee](https://github.com/VISHALLkandharee)
 
 <br />
