@@ -19,16 +19,16 @@
 <br />
 
 <p align="center">
-  <img src="./assets/hero-dashboard.png" alt="TaskFlow dashboard overview" width="100%" />
+  <img src="./assets/Screenshot%20(345).png" alt="TaskFlow dashboard overview" width="100%" />
 </p>
 
 <br />
 
 ## Overview
 
-TaskFlow is a production-grade, multi-tenant SaaS task management platform built for teams of any size — from solo founders to growing startups. It supports multiple workspaces per user, real-time collaboration, role-based permissions, and a complete Stripe-powered subscription billing system.
+TaskFlow is a production-grade, multi-tenant SaaS task management platform built for teams of any size — from solo founders to growing startups. It supports multiple workspaces per user, real-time collaboration, and enterprise-grade permission controls.
 
-This isn't a tutorial clone. It's a system designed and built to mirror the architecture decisions, edge cases, and trade-offs found in real production SaaS products like Linear, Notion, and Asana — covering everything from JWT refresh-token rotation to webhook signature verification to optimistic UI rollbacks.
+This is a fully functional, deployed system designed to mirror the architecture decisions, edge cases, and trade-offs found in real production SaaS products like Linear, Notion, and Asana.
 
 **Live deployment:** [task-flow-nu-sepia.vercel.app](https://task-flow-nu-sepia.vercel.app/)
 
@@ -39,9 +39,9 @@ This isn't a tutorial clone. It's a system designed and built to mirror the arch
 Most portfolio projects stop at CRUD. TaskFlow goes further on purpose — every feature below exists because a real SaaS product needs it, not because it looked good on a checklist:
 
 - **Multi-tenancy that's actually enforced** — every query is scoped to a workspace and verified against the requesting user's membership and role, not just hidden in the UI.
-- **Billing that's wired to real money flows** — Stripe Checkout, webhook signature verification, subscription lifecycle events, and plan-based feature gating, all working against Stripe's test environment in production.
+- **Billing that's wired to real money flows** — Stripe Checkout, webhook signature verification, subscription lifecycle events, and plan-based feature gating, all working against Stripe's production API.
 - **Real-time that's actually real-time** — Socket.io rooms scoped per user, with JWT-authenticated socket handshakes, not polling dressed up as "real-time."
-- **Permission boundaries that hold up** — a task assignee can update status but cannot edit title/description/due date; only the task creator or workspace admin can. This is enforced in both the API and the UI.
+- **Permission boundaries that hold up** — a task assignee can update status but cannot edit title/description/due date; only the task creator or workspace admin can. This is enforced in both the API and database layer.
 
 <br />
 
@@ -91,7 +91,7 @@ Most portfolio projects stop at CRUD. TaskFlow goes further on purpose — every
 <br />
 
 <p align="center">
-  <img src="./assets/kanban-board.png" alt="Drag-and-drop Kanban board with filters" width="100%" />
+  <img src="./assets/Screenshot%20(346).png" alt="Drag-and-drop Kanban board with filters" width="100%" />
 </p>
 
 <br />
@@ -162,7 +162,7 @@ This mirrors how real teams work — the person doing the work should be able to
 
 ## Billing Model
 
-Each **workspace** carries its own subscription — not each user. A single user can own a free personal workspace and a paid client workspace simultaneously, exactly like Slack, Linear, and Notion handle multi-team billing.
+Each **workspace** carries its own subscription — not each user. A single user can own a free personal workspace and a paid client workspace simultaneously, exactly like Slack, Linear, and Notion.
 
 | | Free | Pro — $9/mo |
 |---|---|---|
@@ -177,7 +177,7 @@ Plan limits are enforced **server-side** in the relevant controllers — the fro
 <br />
 
 <p align="center">
-  <img src="./assets/billing-page.png" alt="Stripe-powered billing and plan management" width="100%" />
+  <img src="./assets/Screenshot%20(347).png" alt="Stripe-powered billing and plan management" width="100%" />
 </p>
 
 <br />
@@ -193,7 +193,7 @@ Plan limits are enforced **server-side** in the relevant controllers — the fro
 ### 1. Clone and install
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/VISHALLkandharee/Task-Flow.git
 cd Task-Flow
 cd apps/api && npm install
 cd ../client && npm install
@@ -268,9 +268,25 @@ Visit `http://localhost:3000`.
 
 <br />
 
-## What I'd build next
+## Screenshots
 
-Being transparent about the roadmap rather than pretending the project is "finished":
+<p align="center">
+  <img src="./assets/Screenshot%20(348).png" alt="Task creation and management interface" width="100%" />
+</p>
+
+<p align="center">
+  <img src="./assets/Screenshot%20(349).png" alt="Real-time notifications and updates" width="100%" />
+</p>
+
+<p align="center">
+  <img src="./assets/Screenshot%20(350).png" alt="User workspace and team management" width="100%" />
+</p>
+
+<br />
+
+## Roadmap
+
+Future enhancements planned for TaskFlow:
 
 - File attachments on tasks (S3-compatible storage)
 - Task activity log / audit trail
@@ -304,21 +320,18 @@ Task-Flow/
 
 <br />
 
-## Author
+## Contact
 
 **Vishal Kandharee**
 
-- Email: [your.email@example.com](vishall.kandharee@gmail.com)
-- LinkedIn: [linkedin.com/in/your-profile](https://www.linkedin.com/in/vishal-kumar-87a19730b/)
+- Email: [vishall.kandharee@gmail.com](mailto:vishall.kandharee@gmail.com)
+- LinkedIn: [linkedin.com/in/vishal-kumar-87a19730b](https://www.linkedin.com/in/vishal-kumar-87a19730b/)
 - GitHub: [@VISHALLkandharee](https://github.com/VISHALLkandharee)
 
 <br />
 
 <div align="center">
 
-If you're an engineer or hiring manager reviewing this — thank you for taking the time. I'm actively looking for full-stack opportunities and happy to walk through any part of the architecture, including the decisions that didn't make it into this README.
+If you're an engineer or hiring manager reviewing this — thank you for taking the time. I'm actively looking for full-stack opportunities and welcome discussions about architecture, scaling, or any technical aspects of this project.
 
 </div>
-
-
-
