@@ -3,18 +3,19 @@ import { redis } from '../lib/redis';
 import { prisma } from '../lib/prisma';
 import { notify } from '../lib/notify';
 import { sendTaskDueReminderEmail } from './emailQueue';
+import { logger } from '../lib/logger';
 
 // ─────────────────────────────────────────
 // The Cron Worker — processes repeatable cron jobs
 // ─────────────────────────────────────────
 export const cronWorker = new Worker(
-  'cron', // queue name
+  'cron',
   async (job: Job) => {
-    console.log(`⚙️  Processing cron job: ${job.name}`);
+    logger.info({ jobName: job.name, jobId: job.id }, 'Processing cron job');
 
     if (job.name === 'check-due-dates') {
       const now = new Date();
-      
+
       // Calculate "tomorrow" start and end in UTC
       const tomorrowStart = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0)
@@ -23,7 +24,10 @@ export const cronWorker = new Worker(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 23, 59, 59, 999)
       );
 
-      console.log(`🔍 Checking for tasks due between ${tomorrowStart.toISOString()} and ${tomorrowEnd.toISOString()}`);
+      logger.debug(
+        { start: tomorrowStart.toISOString(), end: tomorrowEnd.toISOString() },
+        'Checking for tasks due tomorrow'
+      );
 
       // Format a nice human-readable date in UTC (e.g. "June 5, 2026")
       const monthNames = [
@@ -69,7 +73,7 @@ export const cronWorker = new Worker(
         },
       });
 
-      console.log(`📌 Found ${tasks.length} tasks due tomorrow.`);
+      logger.info({ count: tasks.length }, 'Found tasks due tomorrow');
 
       const promises = tasks.map(async (task) => {
         if (!task.assigneeId || !task.assignee || !task.assignee.email) {
@@ -94,26 +98,26 @@ export const cronWorker = new Worker(
             taskUrl: `/projects/${task.projectId}`,
             dueDate: formattedDueDate,
           });
-        } catch (err) {
-          console.error(`❌ Failed to send reminder for task ${task.id}:`, err);
+        } catch (err: any) {
+          logger.error({ taskId: task.id, err: err.message }, 'Failed to send reminder for task');
         }
       });
 
       await Promise.allSettled(promises);
-      console.log(`✅ Finished processing reminders for all due tasks.`);
+      logger.info('Finished processing reminders for all due tasks');
     }
   },
   {
     connection: redis,
-    concurrency: 1, // scheduled task, run one at a time
+    concurrency: 1,
   }
 );
 
 // Worker event listeners for logging
 cronWorker.on('completed', (job) => {
-  console.log(`✅ Cron Job ${job.id} (${job.name}) completed successfully`);
+  logger.info({ jobId: job.id, jobName: job.name }, 'Cron job completed successfully');
 });
 
 cronWorker.on('failed', (job, err) => {
-  console.error(`❌ Cron Job ${job?.id} (${job?.name}) failed:`, err.message);
+  logger.error({ jobId: job?.id, jobName: job?.name, err: err.message }, 'Cron job failed');
 });

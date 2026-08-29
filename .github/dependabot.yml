@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "VISHALLkandharee"
+    labels:
+      - "dependencies"
+      - "api"
+
+  - package-ecosystem: "npm"
+    directory: "/apps/client"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "VISHALLkandharee"
+    labels:
+      - "dependencies"
+      - "client"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "ci"

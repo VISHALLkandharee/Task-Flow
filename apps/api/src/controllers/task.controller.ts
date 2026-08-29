@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import ApiError from  '../lib/ApiError';
+import ApiError from '../lib/ApiError';
 import { asyncHandler } from '../lib/asyncHandler';
 import { notify } from '../lib/notify';
 import { sendTaskAssignedEmail } from '../jobs/emailQueue';
+import { logger } from '../lib/logger';
 import { z } from 'zod';
 
 // ─────────────────────────────────────────
@@ -32,7 +33,7 @@ const UpdateTaskSchema = z.object({
 // ─────────────────────────────────────────
 // Helper — verify user can access project
 // ─────────────────────────────────────────
-async function verifyProjectAccess(userId: string, projectId: string) {
+export async function verifyProjectAccess(userId: string, projectId: string) {
   const project = await prisma.project.findUnique({
     where: { id: projectId, deletedAt: null },
     include: { workspace: true },
@@ -59,7 +60,7 @@ async function verifyProjectAccess(userId: string, projectId: string) {
 // ─────────────────────────────────────────
 export const getTasks = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user?.userId || (req as any).userId;
     const projectId = req.query.projectId as string;
 
     if (!projectId) throw new ApiError('projectId is required', 400);
@@ -100,7 +101,7 @@ export const getTasks = asyncHandler(
 // ─────────────────────────────────────────
 export const createTask = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user?.userId || (req as any).userId;
 
     // Validate
     const result = CreateTaskSchema.safeParse(req.body);
@@ -108,8 +109,15 @@ export const createTask = asyncHandler(
       throw new ApiError(result.error.issues[0].message, 400);
     }
 
-    const { projectId, title, description, status, priority,
-      dueDate, assigneeId } = result.data;
+    const {
+      projectId,
+      title,
+      description,
+      status,
+      priority,
+      dueDate,
+      assigneeId,
+    } = result.data;
 
     // Verify access
     const { project } = await verifyProjectAccess(userId, projectId);
@@ -153,33 +161,32 @@ export const createTask = asyncHandler(
       },
     });
 
+    logger.info({ taskId: task.id, projectId, title }, 'Task created successfully');
 
     if (task.assigneeId && task.assigneeId !== userId) {
-  const creator = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { name: true },
-  });
+      const creator = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      });
 
-  await notify({
-    userId: task.assigneeId,
-    message: `${creator?.name} assigned you "${task.title}"`,
-    link: `/projects/${task.projectId}`,
-  });
-  
-  if (task.assignee?.email && task.assignee?.name) {
-    await sendTaskAssignedEmail({
-      to: task.assignee.email,
-      assigneeName: task.assignee.name,
-      assignerName: creator?.name || 'Someone',
-      taskTitle: task.title,
-      projectName: project.name,
-      workspaceName: project.workspace.name,
-      taskUrl: `/projects/${task.projectId}`,
-    });
-  }
-}
+      await notify({
+        userId: task.assigneeId,
+        message: `${creator?.name || 'Someone'} assigned you "${task.title}"`,
+        link: `/projects/${task.projectId}`,
+      });
 
-
+      if (task.assignee?.email && task.assignee?.name) {
+        await sendTaskAssignedEmail({
+          to: task.assignee.email,
+          assigneeName: task.assignee.name,
+          assignerName: creator?.name || 'Someone',
+          taskTitle: task.title,
+          projectName: project.name,
+          workspaceName: project.workspace.name,
+          taskUrl: `/projects/${task.projectId}`,
+        });
+      }
+    }
 
     res.status(201).json({
       message: 'Task created successfully',
@@ -193,7 +200,7 @@ export const createTask = asyncHandler(
 // ─────────────────────────────────────────
 export const updateTask = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user?.userId || (req as any).userId;
     const id = req.params.id as string;
 
     const task = await prisma.task.findUnique({
@@ -233,37 +240,36 @@ export const updateTask = asyncHandler(
       },
     });
 
-
+    logger.info({ taskId: id, updates: Object.keys(result.data) }, 'Task updated successfully');
 
     if (
-  result.data.assigneeId &&
-  result.data.assigneeId !== task.assigneeId &&
-  result.data.assigneeId !== userId
-) {
-  const updater = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { name: true },
-  });
+      result.data.assigneeId &&
+      result.data.assigneeId !== task.assigneeId &&
+      result.data.assigneeId !== userId
+    ) {
+      const updater = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      });
 
-  await notify({
-    userId: result.data.assigneeId,
-    message: `${updater?.name} assigned you "${updated.title}"`,
-    link: `/projects/${updated.projectId}`,
-  });
+      await notify({
+        userId: result.data.assigneeId,
+        message: `${updater?.name || 'Someone'} assigned you "${updated.title}"`,
+        link: `/projects/${updated.projectId}`,
+      });
 
-  if (updated.assignee?.email && updated.assignee?.name) {
-    await sendTaskAssignedEmail({
-      to: updated.assignee.email,
-      assigneeName: updated.assignee.name,
-      assignerName: updater?.name || 'Someone',
-      taskTitle: updated.title,
-      projectName: project.name,
-      workspaceName: project.workspace.name,
-      taskUrl: `/projects/${updated.projectId}`,
-    });
-  }
-}
-
+      if (updated.assignee?.email && updated.assignee?.name) {
+        await sendTaskAssignedEmail({
+          to: updated.assignee.email,
+          assigneeName: updated.assignee.name,
+          assignerName: updater?.name || 'Someone',
+          taskTitle: updated.title,
+          projectName: project.name,
+          workspaceName: project.workspace.name,
+          taskUrl: `/projects/${updated.projectId}`,
+        });
+      }
+    }
 
     res.json({ message: 'Task updated', task: updated });
   }
@@ -275,7 +281,7 @@ export const updateTask = asyncHandler(
 // ─────────────────────────────────────────
 export const moveTask = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user?.userId || (req as any).userId;
     const id = req.params.id as string;
 
     const { status, position } = req.body;
@@ -297,6 +303,7 @@ export const moveTask = asyncHandler(
       },
     });
 
+    logger.info({ taskId: id, status, position }, 'Task moved');
     res.json({ message: 'Task moved', task: updated });
   }
 );
@@ -306,7 +313,7 @@ export const moveTask = asyncHandler(
 // ─────────────────────────────────────────
 export const deleteTask = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user?.userId || (req as any).userId;
     const id = req.params.id as string;
 
     const task = await prisma.task.findUnique({
@@ -322,11 +329,10 @@ export const deleteTask = asyncHandler(
       data: { deletedAt: new Date() },
     });
 
+    logger.info({ taskId: id }, 'Task deleted (soft-delete)');
     res.json({ message: 'Task deleted successfully' });
   }
 );
-
-
 
 // ─────────────────────────────────────────
 // GET /tasks/my-tasks
@@ -335,7 +341,7 @@ export const deleteTask = asyncHandler(
 // ─────────────────────────────────────────
 export const getMyTasks = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user?.userId || (req as any).userId;
     const workspaceId = req.query.workspaceId as string | undefined;
 
     const tasks = await prisma.task.findMany({
@@ -368,10 +374,10 @@ export const getMyTasks = asyncHandler(
 
     // Group by status on server side
     const grouped = {
-      TODO:        tasks.filter((t) => t.status === 'TODO'),
+      TODO: tasks.filter((t) => t.status === 'TODO'),
       IN_PROGRESS: tasks.filter((t) => t.status === 'IN_PROGRESS'),
-      IN_REVIEW:   tasks.filter((t) => t.status === 'IN_REVIEW'),
-      DONE:        tasks.filter((t) => t.status === 'DONE'),
+      IN_REVIEW: tasks.filter((t) => t.status === 'IN_REVIEW'),
+      DONE: tasks.filter((t) => t.status === 'DONE'),
     };
 
     res.json({ tasks, grouped });

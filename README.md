@@ -1,113 +1,183 @@
-Task Flow — Modern Task & Workflow Manager
+# TaskFlow — Modern Task & Workflow Management SaaS
 
-Live demo: https://task-flow-nu-sepia.vercel.app/
-Contact: vishall.kandharee@gmail.com
+[![CI Pipeline](https://github.com/VISHALLkandharee/Task-Flow/actions/workflows/ci.yml/badge.svg)](https://github.com/VISHALLkandharee/Task-Flow/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16+-black.svg)](https://nextjs.org/)
+[![Express](https://img.shields.io/badge/Express-5.x-green.svg)](https://expressjs.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-One-line summary Task Flow is a production-minded task and workflow manager with an intuitive, fast UI, realtime-ish updates, and features to track projects, tasks, assignees, and progress — built with modern frontend engineering practices for reliability and maintainability.
+**Live Demo:** [task-flow-nu-sepia.vercel.app](https://task-flow-nu-sepia.vercel.app/)  
+**Contact:** [vishall.kandharee@gmail.com](mailto:vishall.kandharee@gmail.com)
 
-Why this project matters (TL;DR for reviewers)
+---
 
+## Overview
 
+**TaskFlow** is an enterprise-grade TypeScript SaaS monorepo featuring a multi-tenant task and workflow management system. Built with **Next.js (App Router)** and an **Express.js API**, it features real-time WebSocket communication, background email queuing with BullMQ & Redis, Stripe subscription billing with idempotent webhooks, role-based access control (RBAC), and automated testing.
 
+---
 
-Demonstrates full‑stack thinking: UX, performance-focused frontend, auth/session handling, and deploy-ready configuration.
-Great interview talking points: data modeling for tasks, routing & state management, optimistic updates, accessibility and responsive layout.
-Top features
+## Key Features
 
-Project and task CRUD with rich metadata (due date, assignee, priority, tags)
-Kanban / list view switching and quick filters
-Search and tag-based filtering
-User authentication & role-aware UI (if enabled)
-Export/import tasks and CSV export
-Responsive design: desktop + mobile
-Deployed to Vercel for instant sharing with clients
+- **Multi-Tenant Workspaces**: Workspace isolation with `OWNER`, `ADMIN`, and `MEMBER` RBAC roles.
+- **Real-Time Kanban & List Boards**: Drag-and-drop task manipulation with optimistic UI updates and live WebSocket synchronization across users.
+- **Stripe Subscription Billing**: Pro plan upgrades via Stripe Checkout, customer portal self-management, and idempotent webhook processing.
+- **Background Processing & Cron**: BullMQ and Redis queues for transactional invite/welcome emails (Resend) and automated daily task due date reminders.
+- **Structured Logging & Diagnostics**: `pino`-powered structured logging with request tracing, standardized API error responses, and `/health` monitoring endpoints.
+- **Zero-Setup Testing**: Comprehensive Jest + Supertest automated test suite mocking external boundaries (Stripe, Resend, DB, Redis) with 100% offline test execution.
+- **Full Containerization**: Multi-stage Dockerfiles and `docker-compose.yml` to spin up PostgreSQL, Redis, API, and Client in a single command.
 
+---
 
-Technology:
+## Architecture
 
-Frontend: Next.js (App Router) + React + TypeScript
-Styling: Tailwind CSS / CSS Modules (adjust to actual)
-State: React Query / Zustand / Context (adjust to actual)
-Backend/BaaS: Supabase / Firebase / custom API (adjust to actual)
-Deployment: Vercel
-What I (author) built — quick bullets for resumes/interviews
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 Client (Next.js 16 + React)                 │
+│         Kanban Board | Optimistic UI | Tailwind CSS         │
+└───────────────┬─────────────────────────────▲───────────────┘
+                │ HTTP / REST                 │ Socket.io
+                ▼                             │
+┌─────────────────────────────────────────────┴───────────────┐
+│                 API Server (Express 5 + TS)                 │
+│      JWT Auth | Zod Validation | Pino Structured Logging    │
+└───────┬──────────────┬──────────────┬──────────────┬────────┘
+        │              │              │              │
+        ▼              ▼              ▼              ▼
+┌──────────────┐┌──────────────┐┌──────────────┐┌──────────────┐
+│  PostgreSQL  ││ Redis/BullMQ ││ Stripe API   ││  Resend API  │
+│(Prisma ORM)  ││ (Background) ││  (Billing)   ││   (Emails)   │
+└──────────────┘└──────────────┘└──────────────┘└──────────────┘
+```
 
-Built Task Flow frontend with Next.js and TypeScript; implemented project/task CRUD, filters, and a responsive dashboard.
-Integrated authentication and persisted user data using Supabase (or your backend); deployed to Vercel for client demos.
-Added CI checks (lint, type-check, build) and documented a reproducible dev setup in the README.
-Quick start (5–10 minutes)
+---
 
-Clone the repo git clone https://github.com/VISHALLkandharee/Task-Flow.git cd Task-Flow
-Install dependencies npm install
-Create env file cp .env.example .env
-edit .env with real values (see below)
-Run dev server npm run dev
-Open browser: http://localhost:3000 (or the port printed by Next/Vite)
-Environment variables (.env.example)
+## Quick Start (Fresh Clone)
 
-Example variables — DO NOT commit secrets
-NEXT_PUBLIC_API_URL=https://api.example.com NEXT_PUBLIC_VERCEL_ENV=development NEXT_PUBLIC_MAPS_KEY=your_maps_key_if_applicable NEXTAUTH_URL=http://localhost:3000 NEXTAUTH_SECRET=your_nextauth_secret SUPABASE_URL=https://your.supabase.co SUPABASE_ANON_KEY=your_supabase_anon_key
+### Option A: One-Command Docker Setup
 
-NPM scripts (recommended) Add/verify these in package.json:
+```bash
+# 1. Clone repository
+git clone https://github.com/VISHALLkandharee/Task-Flow.git
+cd Task-Flow
 
-dev — start dev server (next dev or vite)
-build — production build (next build or vite build)
-start — start production server (next start)
-lint — eslint
-format — prettier --write .
-type-check — tsc --noEmit
-test — vitest / jest Example: { "scripts": { "dev": "next dev", "build": "next build", "start": "next start", "lint": "eslint 'src/**/*.{ts,tsx,js,jsx}'", "format": "prettier --write .", "type-check": "tsc --noEmit", "test": "vitest" } }
-Recommended repo additions (high impact)
+# 2. Start all services (PostgreSQL, Redis, API, and Client)
+docker compose up --build
+```
+- **Web App**: `http://localhost:3000`
+- **API Server**: `http://localhost:5000`
+- **Health Check**: `http://localhost:5000/health`
 
-.env.example (shown above)
-LICENSE (MIT) at repo root
-.github/workflows/ci.yml — run: npm ci, npm run lint, npm run type-check, npm run build, npm run test
-Add badges (Vercel + CI + license) on top of README
-Add CONTRIBUTING.md, ISSUE_TEMPLATE.md & PULL_REQUEST_TEMPLATE.md
-Add small architecture diagram in /assets/arch.png
-Suggested CI workflow (copy to .github/workflows/ci.yml) name: CI on: [push, pull_request] jobs: build: runs-on: ubuntu-latest steps: - uses: actions/checkout@v4 - uses: actions/setup-node@v4 with: node-version: 18 - run: npm ci - run: npm run lint - run: npm run type-check - run: npm run build - run: npm run test
+---
 
-Testing & quality
+### Option B: Local Development Setup
 
-Add unit tests (Vitest + React Testing Library) for core components (header, task item, project card)
-Add lint-staged + husky pre-commit hooks to run format + lint
-Add a single integration test to validate core user flows
-Accessibility & performance checks
+#### 1. Setup Backend API (`apps/api`)
 
-Run Lighthouse and document scores in README or repo issues
-Add basic keyboard navigation notes for core UI (kanban drag/drop, modal focus trapping)
-Ensure images use alt text and content has semantic HTML
-Deployment / Vercel
+```bash
+cd apps/api
 
-Provide a one-click Vercel deploy button: ![Deploy to Vercel](https://vercel.com/button)
-On Vercel, set environment variables (NEXTAUTH_SECRET, SUPABASE keys) in the project settings.
-Security & secrets
+# Install dependencies
+npm ci
 
-Never commit production keys. Use Vercel / Netlify secret stores.
-If using Supabase, avoid embedding service_role keys in the frontend.
-Architecture (brief)
+# Configure environment variables
+cp .env.example .env
 
-Frontend: Next.js handles SSR/SSG pages and client navigation.
-API: Either uses Supabase client in frontend or calls an API server for business logic.
-Storage: Supabase / Postgres for persistent data; object storage for attachments. (If you want, I’ll open a small architecture diagram showing auth → API → DB → frontend flow.)
-What to show clients / reviewers (5–30s tour)
+# Generate Prisma Client & Run Migrations
+npx prisma generate
+npx prisma db push
 
-Home/dashboard (single glance): total tasks, due soon, active projects.
-Create a project and add 2 tasks (demonstrates CRUD).
-Filter/search and show quick sorting/kanban view.
-Open task detail to show comments/attachments (if implemented).
-Call out deployment + CI status and show README top-line bullets.
-“Elevator” bullets you can copy into your portfolio or LinkedIn
+# Start API in development mode
+npm run dev
+```
 
-Built Task Flow, a modern task/workflow manager, using Next.js and TypeScript; integrated Supabase for auth & storage; deployed to Vercel for client demos.
-Implemented project-level CRUD, dynamic filtering & Kanban UI and improved performance to reach X% faster initial paint (replace X with your metric if available).
-Added developer-friendly tooling: type-checks, linting, and CI to ensure PR quality and fast iteration.
-Contributing
+#### 2. Setup Client (`apps/client`)
 
-Fork → create branch feat/NAME → open PR
-Run tests and linters before opening PR
-Add descriptive PR titles and link any related issue
-License MIT — see LICENSE file
+```bash
+cd apps/client
 
-Contact & demo Live demo: https://task-flow-nu-sepia.vercel.app/
-Email: vishall.kandharee@gmail.com
+# Install dependencies
+npm ci
+
+# Configure environment variables
+cp .env.local.example .env.local
+
+# Start Next.js frontend
+npm run dev
+```
+
+---
+
+## Automated Testing Suite
+
+The repository includes unit and integration tests covering controller logic, access control permissions, Stripe webhook idempotency, and health endpoints.
+
+```bash
+cd apps/api
+
+# Run test suite
+npm test
+
+# Run tests with code coverage report
+npm run test:coverage
+```
+
+### Test Coverage Highlights
+- **Task Controller**: Verifies creation validation, project access security (403 for unauthorized members, 404 for missing projects), task updates, moves, and soft deletion.
+- **Billing Controller**: Tests Stripe checkout creation, customer mapping, billing portal redirection, and webhook idempotency handling.
+- **Auth Controller**: Tests registration, password hashing verification, JWT token refreshes, and cookie management.
+- **Health Endpoint**: Validates `/health` and `/api/v1/health` connectivity status checks for PostgreSQL and Redis.
+
+---
+
+## Code Quality & Linting
+
+```bash
+# Lint API
+cd apps/api && npm run lint
+
+# Lint Client
+cd apps/client && npm run lint
+
+# Typecheck Monorepo
+cd apps/api && npx tsc --noEmit
+cd apps/client && npx tsc --noEmit
+```
+
+---
+
+## Monorepo Structure
+
+```
+Task-Flow/
+├── .github/
+│   ├── workflows/ci.yml       # Automated CI pipeline (lint, typecheck, test, build)
+│   └── dependabot.yml         # Weekly automated dependency update tooling
+├── apps/
+│   ├── api/                   # Express.js REST API
+│   │   ├── prisma/            # Database schema & migrations
+│   │   ├── src/
+│   │   │   ├── controllers/   # Route controllers (auth, billing, task, etc.)
+│   │   │   ├── jobs/          # BullMQ background workers & cron queues
+│   │   │   ├── lib/           # Logger, Prisma, Redis, Stripe, Socket helpers
+│   │   │   ├── middlewares/   # Error handling, Auth protection, Rate limiter
+│   │   │   └── routes/        # Express API route declarations
+│   │   ├── Dockerfile
+│   │   └── jest.config.js
+│   └── client/                # Next.js 16 App Router Client
+│       ├── app/               # App Router pages and layouts
+│       ├── components/        # Modular UI components (<300 LOC per file)
+│       │   ├── board/         # Kanban board, cards, columns, task detail forms
+│       │   └── landing/       # Modular landing page sections
+│       ├── hooks/             # TanStack React Query custom hooks
+│       ├── store/             # Zustand global state stores
+│       └── Dockerfile
+├── docker-compose.yml         # Full stack container orchestration
+└── README.md
+```
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
