@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LogOut, User, Menu } from "lucide-react";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
@@ -8,7 +7,6 @@ import { disconnectSocket } from "@/lib/socket";
 import NotificationPanel from "./NotificationPanel";
 
 export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
-  const router = useRouter();
   const { user, logout } = useAuthStore();
 
   const handleLogout = async () => {

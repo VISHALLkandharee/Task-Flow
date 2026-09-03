@@ -34,8 +34,6 @@ export default function DashboardLayout({
     staleTime: 0,
   });
 
-  const isActuallyLoading = isLoading;
-
   // Sync to Zustand store
   useEffect(() => {
     if (data) {
