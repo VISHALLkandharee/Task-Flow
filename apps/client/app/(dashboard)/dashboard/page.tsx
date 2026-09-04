@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useProjects } from "@/hooks/useProjects";
 import { useMembers } from "@/hooks/useMembers";
 import { useMyTasks } from "@/hooks/useTasks";
-import { Loader2, AlertCircle, TrendingUp, Clock } from "lucide-react";
+import { Loader2, TrendingUp, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {

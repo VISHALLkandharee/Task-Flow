@@ -25,7 +25,7 @@ export default function BillingPage() {
   const { data: billing, isLoading, refetch } = useBillingStatus();
   const { mutate: checkout, isPending: isCheckingOut } = useCreateCheckout();
   const { mutate: portal, isPending: isPortaling } = useCreatePortal();
-  const { workspace, setWorkspace, workspaces, setWorkspaces } = useAuthStore();
+  const { workspace, setWorkspace, setWorkspaces } = useAuthStore();
 
   // Handle redirect back from Stripe
   const success = searchParams.get("success");

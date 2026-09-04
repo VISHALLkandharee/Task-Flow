@@ -314,8 +314,6 @@ export default function SettingsPage() {
     }
   };
 
-  const isOwner = true; // We'll check from members data
-
   return (
     <div className="max-w-2xl space-y-6">
       {/* Header */}

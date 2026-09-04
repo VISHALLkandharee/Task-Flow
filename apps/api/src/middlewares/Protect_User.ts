@@ -21,7 +21,7 @@ const protectUser = (req:Request, res:Response, next:NextFunction) => {
 
         next()
 
-}catch(error){
+}catch{
     next(new ApiError('Not authenticated', 401));
 }
     }

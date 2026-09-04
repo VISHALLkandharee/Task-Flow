@@ -5,7 +5,7 @@ interface customErr extends Error {
     statusCode?: number;
 }
 
-function ErrorHandlerMiddleware(err: customErr, req: Request, res: Response, next: NextFunction): any {
+function ErrorHandlerMiddleware(err: customErr, _req: Request, res: Response, _next: NextFunction): any {
     const message = err.message || "Internal Server Error";
     const statusCode = err.statusCode || 500;
 

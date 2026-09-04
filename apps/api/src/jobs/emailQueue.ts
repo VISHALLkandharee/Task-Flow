@@ -1,6 +1,6 @@
-import { Queue, Worker, QueueEvents } from 'bullmq';
+import { Queue } from 'bullmq';
 import { redis } from '../lib/redis';
-import { Resend } from 'resend';
+import { logger } from '../lib/logger';
 
 // ─────────────────────────────────────────
 // Types for our email jobs
@@ -51,17 +51,17 @@ export const emailQueue = new Queue('emails', {
 // ─────────────────────────────────────────
 export const sendInviteEmail = async (data: InviteEmailData) => {
   await emailQueue.add('invite-email', data);
-  console.log(`📧 Invite email queued for ${data.to}`);
+  logger.info({ to: data.to }, 'Invite email job queued');
 };
 
 export const sendWelcomeEmail = async (data: WelcomeEmailData) => {
   await emailQueue.add('welcome-email', data);
-  console.log(`📧 Welcome email queued for ${data.to}`);
+  logger.info({ to: data.to }, 'Welcome email job queued');
 };
 
 export const sendTaskAssignedEmail = async (data: TaskAssignedEmailData) => {
   await emailQueue.add('task-assigned-email', data);
-  console.log(`📧 Task assigned email queued for ${data.to}`);
+  logger.info({ to: data.to, taskTitle: data.taskTitle }, 'Task assigned email job queued');
 };
 
 // ─────────────────────────────────────────
@@ -79,5 +79,5 @@ export interface TaskDueReminderEmailData {
 
 export const sendTaskDueReminderEmail = async (data: TaskDueReminderEmailData) => {
   await emailQueue.add('task-due-reminder-email', data);
-  console.log(`⏰ Due reminder email queued for ${data.to}`);
-};
+  logger.info({ to: data.to, taskTitle: data.taskTitle }, 'Due reminder email job queued');
+};

@@ -43,7 +43,7 @@ export const getSocket = (): Socket => {
           // If successful, tell socket to try connecting again
           // (It will now automatically include the new cookie)
           socket?.connect();
-        } catch (refreshErr) {
+        } catch {
           console.error('Socket token refresh failed, logging out...');
           // Axios interceptor will have handled the redirect to /login
         }

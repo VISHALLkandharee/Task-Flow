@@ -1,6 +1,7 @@
 import { Server as SocketServer, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import { verifyAccessToken } from './jwt';
+import { logger } from './logger';
 
 // ─────────────────────────────────────────
 // Store io instance globally
@@ -43,8 +44,7 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
       // Attach userId to socket for later use
       socket.data.userId = (payload as any).userId;
       next();
-
-    } catch (err) {
+    } catch {
       next(new Error('Unauthorized'));
     }
   });
@@ -54,16 +54,15 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
   // ─────────────────────────────────────────
   io.on('connection', (socket: Socket) => {
     const userId = socket.data.userId;
-    console.log(`🔌 Socket connected: ${socket.id} (user: ${userId})`);
+    logger.info({ socketId: socket.id, userId }, 'Socket connected');
 
     // Join personal room — user:clx123
-    // All notifications for this user go here
     socket.join(`user:${userId}`);
-    console.log(`👤 User ${userId} joined room user:${userId}`);
+    logger.debug({ socketId: socket.id, userId }, 'User joined socket room');
 
     // Handle disconnect
     socket.on('disconnect', (reason) => {
-      console.log(`🔌 Socket disconnected: ${socket.id} (${reason})`);
+      logger.info({ socketId: socket.id, reason }, 'Socket disconnected');
     });
 
     // Handle client marking notifications as read
@@ -78,7 +77,7 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
     });
   });
 
-  console.log('🚀 Socket.io server initialized');
+  logger.info('Socket.io server initialized');
   return io;
 };
 
@@ -101,5 +100,5 @@ export const emitToUser = (
 ) => {
   if (!io) return;
   io.to(`user:${userId}`).emit(event, data);
-  console.log(`📡 Emitted '${event}' to user:${userId}`);
+  logger.debug({ event, userId }, 'Emitted socket event to user');
 };

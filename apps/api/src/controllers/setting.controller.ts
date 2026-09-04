@@ -5,6 +5,7 @@ import { asyncHandler } from '../lib/asyncHandler';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { stripe } from '../lib/stripe';
+import { logger } from '../lib/logger';
 
 // ─────────────────────────────────────────
 // Validation Schemas
@@ -217,7 +218,7 @@ export const deleteWorkspace = asyncHandler(
         // Only ignore 404s (subscription already gone). For any other error, block deletion
         // so we don't orphan an active subscription!
         if (err.statusCode !== 404) {
-          console.error('[Stripe] Failed to cancel sub:', err.message);
+          logger.error({ err: err.message, workspaceId }, 'Failed to cancel Stripe subscription during workspace deletion');
           throw new ApiError(
             'Failed to cancel billing subscription. Please try again later or contact support.',
             500

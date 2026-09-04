@@ -4,7 +4,7 @@ dotenv.config();
 import http from 'http';
 import app from './app';
 import { initSocket } from './lib/socket';
-import ErrorHandlerMiddleware from './middlewares/Error_Handler';
+import { logger } from './lib/logger';
 
 const PORT = process.env.PORT || 5000;
 
@@ -20,24 +20,21 @@ const httpServer = http.createServer(app);
 // ─────────────────────────────────────────
 initSocket(httpServer);
 
-// Error handler
-app.use(ErrorHandlerMiddleware);
-
 // ─────────────────────────────────────────
 // Start server — use httpServer not app.listen
 // So Socket.io and Express share same port
 // ─────────────────────────────────────────
 httpServer.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`🔌 Socket.io ready on port ${PORT}`);
-  console.log(`🎯 Webhook: http://localhost:${PORT}/api/v1/billing/webhook`);
+  logger.info({ port: PORT }, `Server running on port ${PORT}`);
+  logger.info({ port: PORT }, `Socket.io ready on port ${PORT}`);
+  logger.info({ webhookUrl: `http://localhost:${PORT}/api/v1/billing/webhook` }, 'Stripe webhook listening endpoint ready');
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM: shutting down gracefully');
+  logger.info('SIGTERM received: shutting down gracefully');
   httpServer.close(() => {
-    console.log('Server closed');
+    logger.info('Server closed cleanly');
     process.exit(0);
   });
   setTimeout(() => process.exit(1), 10_000);

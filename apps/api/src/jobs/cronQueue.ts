@@ -1,5 +1,6 @@
 import { Queue } from 'bullmq';
 import { redis } from '../lib/redis';
+import { logger } from '../lib/logger';
 
 // ─────────────────────────────────────────
 // Create the Cron Queue
@@ -33,9 +34,9 @@ const registerRepeatableJobs = async () => {
         },
       }
     );
-    console.log('⏰ BullMQ repeatable job "check-due-dates" registered (Daily at 8:00 AM UTC)');
-  } catch (err) {
-    console.error('❌ Failed to register repeatable job "check-due-dates":', err);
+    logger.info('BullMQ repeatable job "check-due-dates" registered (Daily at 8:00 AM UTC)');
+  } catch (err: any) {
+    logger.error({ err: err.message }, 'Failed to register repeatable job "check-due-dates"');
   }
 };
 

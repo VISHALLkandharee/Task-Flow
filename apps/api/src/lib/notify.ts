@@ -1,5 +1,6 @@
 import { prisma } from './prisma';
 import { emitToUser } from './socket';
+import { logger } from './logger';
 
 interface CreateNotificationInput {
   userId: string;
@@ -37,7 +38,7 @@ export const notify = async ({
     });
 
     return notification;
-  } catch (err) {
-    console.error('❌ Failed to create notification:', err);
+  } catch (err: any) {
+    logger.error({ err: err.message, userId }, 'Failed to create notification');
   }
 };

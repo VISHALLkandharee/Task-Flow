@@ -1,6 +1,7 @@
 import { Worker, Job } from 'bullmq';
 import { Resend } from 'resend';
 import { redis } from '../lib/redis';
+import { logger } from '../lib/logger';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const BASE_URL = process.env.CLIENT_URL || 'http://localhost:3000';
@@ -10,9 +11,9 @@ const BASE_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 // This runs separately from your HTTP server
 // ─────────────────────────────────────────
 export const emailWorker = new Worker(
-  'emails', // same queue name
+  'emails',
   async (job: Job) => {
-    console.log(`⚙️  Processing job: ${job.name}`);
+    logger.info({ jobName: job.name, jobId: job.id }, 'Processing email job');
 
     // ── Invite Email ──
     if (job.name === 'invite-email') {
@@ -52,7 +53,7 @@ export const emailWorker = new Worker(
         `,
       });
 
-      console.log(`✅ Invite email sent to ${to}`);
+      logger.info({ to, workspaceName }, 'Invite email sent successfully');
     }
 
     // ── Welcome Email ──
@@ -90,13 +91,12 @@ export const emailWorker = new Worker(
         `,
       });
 
-      console.log(`✅ Welcome email sent to ${to}`);
+      logger.info({ to, name }, 'Welcome email sent successfully');
     }
 
     // ── Task Assigned Email ──
     if (job.name === 'task-assigned-email') {
       const { to, assigneeName, assignerName, taskTitle, projectName, workspaceName, taskUrl } = job.data;
-
       const fullTaskUrl = `${BASE_URL}${taskUrl}`;
 
       await resend.emails.send({
@@ -147,13 +147,12 @@ export const emailWorker = new Worker(
         `,
       });
 
-      console.log(`✅ Task assigned email sent to ${to}`);
+      logger.info({ to, taskTitle }, 'Task assigned email sent successfully');
     }
 
     // ── Task Due Reminder Email ──
     if (job.name === 'task-due-reminder-email') {
       const { to, assigneeName, taskTitle, projectName, workspaceName, taskUrl, dueDate } = job.data;
-
       const fullTaskUrl = `${BASE_URL}${taskUrl}`;
 
       await resend.emails.send({
@@ -207,12 +206,12 @@ export const emailWorker = new Worker(
         `,
       });
 
-      console.log(`✅ Task due reminder email sent to ${to}`);
+      logger.info({ to, taskTitle }, 'Task due reminder email sent successfully');
     }
   },
   {
     connection: redis,
-    concurrency: 5, // process 5 emails simultaneously
+    concurrency: 5,
   }
 );
 
@@ -220,9 +219,9 @@ export const emailWorker = new Worker(
 // Worker event listeners — for logging
 // ─────────────────────────────────────────
 emailWorker.on('completed', (job) => {
-  console.log(`✅ Job ${job.id} (${job.name}) completed`);
+  logger.info({ jobId: job.id, jobName: job.name }, 'Email worker job completed');
 });
 
 emailWorker.on('failed', (job, err) => {
-  console.error(`❌ Job ${job?.id} (${job?.name}) failed:`, err.message);
+  logger.error({ jobId: job?.id, jobName: job?.name, err: err.message }, 'Email worker job failed');
 });

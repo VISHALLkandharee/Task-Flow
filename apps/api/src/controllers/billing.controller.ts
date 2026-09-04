@@ -1,9 +1,9 @@
-import Stripe from 'stripe';
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { stripe } from '../lib/stripe';
 import ApiError from '../lib/ApiError';
 import { asyncHandler } from '../lib/asyncHandler';
+import { logger } from '../lib/logger';
 
 // ─────────────────────────────────────────
 // Helper — get userId from request
@@ -20,7 +20,6 @@ export const createCheckoutSession = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const { workspaceId } = req.body;
-
 
     if (!workspaceId) throw new ApiError('workspaceId is required', 400);
 
@@ -81,8 +80,8 @@ export const createCheckoutSession = asyncHandler(
       metadata: {
         workspaceId: workspace.id,
       },
-      success_url: `${process.env.CLIENT_URL}/billing?success=true`,
-      cancel_url:  `${process.env.CLIENT_URL}/billing?canceled=true`,
+      success_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/billing?success=true`,
+      cancel_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/billing?canceled=true`,
       subscription_data: {
         metadata: {
           workspaceId: workspace.id,
@@ -90,6 +89,7 @@ export const createCheckoutSession = asyncHandler(
       },
     });
 
+    logger.info({ workspaceId, customerId, sessionId: session.id }, 'Stripe checkout session created');
     res.json({ url: session.url });
   }
 );
@@ -122,9 +122,10 @@ export const createPortalSession = asyncHandler(
 
     const session = await stripe.billingPortal.sessions.create({
       customer: workspace.stripeCustomerId,
-      return_url: `${process.env.CLIENT_URL}/billing`,
+      return_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/billing`,
     });
 
+    logger.info({ workspaceId, customerId: workspace.stripeCustomerId }, 'Stripe billing portal session created');
     res.json({ url: session.url });
   }
 );
@@ -178,7 +179,6 @@ export const handleWebhook = async (
 ): Promise<void> => {
   const sig = req.headers['stripe-signature'];
 
-
   if (!sig) {
     res.status(400).json({ error: 'No signature' });
     return;
@@ -192,27 +192,25 @@ export const handleWebhook = async (
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-    
+
     // Idempotency Check: Prevent duplicate webhooks from Stripe
     const existingWebhook = await prisma.processedWebhook.findUnique({
-      where: { id: event.id }
+      where: { id: event.id },
     });
 
     if (existingWebhook) {
-      console.log(`[Webhook] Event ${event.id} already processed. Skipping.`);
-      res.json({ received: true });
+      logger.info({ eventId: event.id, type: event.type }, 'Stripe webhook event already processed. Skipping duplicate.');
+      res.json({ received: true, duplicate: true });
       return;
     }
-
   } catch (err: any) {
-    console.error('❌ Signature failed:', err.message);
+    logger.error({ err: err.message }, 'Stripe webhook signature verification failed');
     res.status(400).json({ error: `Webhook Error: ${err.message}` });
     return;
   }
 
   try {
     switch (event.type) {
-
       case 'checkout.session.completed': {
         const session = event.data.object as any;
 
@@ -221,7 +219,7 @@ export const handleWebhook = async (
         const subscriptionIdStr = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
 
         if (!workspaceId) {
-          console.error('❌ workspaceId missing from metadata!');
+          logger.warn({ eventId: event.id }, 'workspaceId missing from checkout session metadata, attempting customer fallback');
 
           // Fallback — find workspace by stripeCustomerId
           if (customerStr) {
@@ -237,9 +235,9 @@ export const handleWebhook = async (
                   stripeSubscriptionId: subscriptionIdStr || null,
                 },
               });
-              console.log(`🎉 Workspace ${workspace.id} upgraded via customer fallback`);
+              logger.info({ workspaceId: workspace.id }, 'Workspace upgraded to PRO via customer fallback');
             } else {
-              console.error('❌ Could not find workspace by customer either!');
+              logger.error({ customer: customerStr }, 'Could not find workspace by customer fallback');
             }
           }
           break;
@@ -253,7 +251,7 @@ export const handleWebhook = async (
           },
         });
 
-        console.log(`🎉 Workspace ${workspaceId} upgraded to PRO`);
+        logger.info({ workspaceId }, 'Workspace upgraded to PRO successfully');
         break;
       }
 
@@ -271,7 +269,7 @@ export const handleWebhook = async (
             where: { id: workspace.id },
             data: { plan: 'PRO' },
           });
-          console.log(`🔄 Renewed: ${workspace.id}`);
+          logger.info({ workspaceId: workspace.id }, 'Subscription renewed: Workspace retained PRO plan');
         }
         break;
       }
@@ -289,7 +287,7 @@ export const handleWebhook = async (
             where: { id: workspace.id },
             data: { plan: 'FREE' },
           });
-          console.log(`⬇️ Downgraded: ${workspace.id}`);
+          logger.warn({ workspaceId: workspace.id }, 'Invoice payment failed: Downgraded workspace to FREE plan');
         }
         break;
       }
@@ -304,7 +302,7 @@ export const handleWebhook = async (
             where: { id: workspace.id },
             data: { plan: 'FREE', stripeSubscriptionId: null },
           });
-          console.log(`❌ Cancelled: ${workspace.id}`);
+          logger.info({ workspaceId: workspace.id }, 'Subscription cancelled: Reset workspace plan to FREE');
         }
         break;
       }
@@ -314,22 +312,20 @@ export const handleWebhook = async (
         const workspace = await prisma.workspace.findFirst({
           where: { stripeSubscriptionId: subscription.id },
         });
-        
+
         if (workspace) {
-          // Stripe statuses: 'active', 'past_due', 'unpaid', 'canceled', 'incomplete', 'incomplete_expired', 'trialing', 'paused'
           const isPro = ['active', 'trialing'].includes(subscription.status);
           await prisma.workspace.updateMany({
             where: { id: workspace.id },
             data: { plan: isPro ? 'PRO' : 'FREE' },
           });
-          console.log(`📝 Subscription updated for ${workspace.id}: plan set to ${isPro ? 'PRO' : 'FREE'}`);
+          logger.info({ workspaceId: workspace.id, isPro, status: subscription.status }, 'Subscription updated');
         }
         break;
       }
 
       default:
-        // Ignore unhandled event types silently unless debugging
-        // console.log(`Unhandled: ${event.type}`);
+        logger.debug({ eventType: event.type }, 'Unhandled stripe webhook event received');
         break;
     }
 
@@ -338,12 +334,10 @@ export const handleWebhook = async (
       data: {
         id: event.id,
         type: event.type,
-      }
+      },
     });
-
   } catch (err: any) {
-    console.error('❌ Webhook processing error:', err.message);
-    console.error(err.stack);
+    logger.error({ err: err.message, stack: err.stack }, 'Stripe webhook processing error');
     res.status(500).json({ error: 'Processing failed' });
     return;
   }

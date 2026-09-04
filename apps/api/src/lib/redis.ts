@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { logger } from './logger';
 
 const getRedisConfig = () => {
   // Production — Upstash uses full URL
@@ -8,6 +9,7 @@ const getRedisConfig = () => {
       tls: {
         rejectUnauthorized: false,
       },
+      lazyConnect: process.env.NODE_ENV === 'test',
     });
   }
 
@@ -16,15 +18,16 @@ const getRedisConfig = () => {
     host: process.env.REDIS_HOST || 'localhost',
     port: Number(process.env.REDIS_PORT) || 6379,
     maxRetriesPerRequest: null,
+    lazyConnect: process.env.NODE_ENV === 'test',
   });
 };
 
 export const redis = getRedisConfig();
 
 redis.on('connect', () => {
-  console.log('✅ Redis connected');
+  logger.info('Redis connected successfully');
 });
 
 redis.on('error', (err) => {
-  console.error('❌ Redis error:', err.message);
+  logger.error({ err: err.message }, 'Redis error occurred');
 });
