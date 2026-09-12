@@ -1,12 +1,12 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import ApiError from '../lib/ApiError';
 import { asyncHandler } from '../lib/asyncHandler';
 import { z } from 'zod';
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Validation Schemas
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const CreateProjectSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(50),
   description: z.string().max(200).optional(),
@@ -19,9 +19,9 @@ const UpdateProjectSchema = z.object({
   color: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
 });
 
-// ─────────────────────────────────────────
-// Helper — verify user is member of workspace
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helper â€” verify user is member of workspace
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function verifyMember(userId: string, workspaceId: string) {
   const member = await prisma.member.findUnique({
     where: {
@@ -32,12 +32,12 @@ async function verifyMember(userId: string, workspaceId: string) {
   return member;
 }
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // GET /projects?workspaceId=xxx
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getProjects = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { workspaceId } = req.query;
 
     if (!workspaceId) throw new ApiError('workspaceId is required', 400);
@@ -66,12 +66,12 @@ export const getProjects = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // GET /projects/:id
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getProject = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
 
     const project = await prisma.project.findUnique({
@@ -93,12 +93,12 @@ export const getProject = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // POST /projects
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const createProject = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { workspaceId } = req.body;
 
     if (!workspaceId) throw new ApiError('workspaceId is required', 400);
@@ -150,12 +150,12 @@ export const createProject = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // PATCH /projects/:id
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const updateProject = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
 
     const project = await prisma.project.findUnique({
@@ -181,12 +181,12 @@ export const updateProject = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // DELETE /projects/:id (soft delete)
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const deleteProject = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
 
     const project = await prisma.project.findUnique({
@@ -200,7 +200,7 @@ export const deleteProject = asyncHandler(
       throw new ApiError('Only owners and admins can delete projects', 403);
     }
 
-    // Soft delete — just set deletedAt
+    // Soft delete â€” just set deletedAt
     await prisma.project.update({
       where: { id : id as string },
       data: { deletedAt: new Date() },

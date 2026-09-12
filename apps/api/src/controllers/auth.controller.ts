@@ -1,4 +1,4 @@
-import { asyncHandler } from "../lib/asyncHandler";
+﻿import { asyncHandler } from "../lib/asyncHandler";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import ApiError from "../lib/ApiError";
@@ -189,7 +189,7 @@ export const refreshToken = asyncHandler(
 //user profile
 export const getMe = asyncHandler(async(req:Request, res:Response) => {
   
-  const userId = (req as any).user.userId
+  const userId = req.user!.userId;
   if(!userId) throw new ApiError("unauthorized!", 401)
 
   const user = await prisma.user.findUnique({

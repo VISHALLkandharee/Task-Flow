@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import ApiError from '../lib/ApiError';
 import { asyncHandler } from '../lib/asyncHandler';
@@ -7,9 +7,9 @@ import { sendTaskAssignedEmail } from '../jobs/emailQueue';
 import { logger } from '../lib/logger';
 import { z } from 'zod';
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Validation Schemas
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const CreateTaskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   description: z.string().max(500).optional(),
@@ -30,9 +30,9 @@ const UpdateTaskSchema = z.object({
   position: z.number().optional(),
 });
 
-// ─────────────────────────────────────────
-// Helper — verify user can access project
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helper â€” verify user can access project
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function verifyProjectAccess(userId: string, projectId: string) {
   const project = await prisma.project.findUnique({
     where: { id: projectId, deletedAt: null },
@@ -55,12 +55,12 @@ export async function verifyProjectAccess(userId: string, projectId: string) {
   return { project, member };
 }
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // GET /tasks?projectId=xxx
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getTasks = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId || (req as any).userId;
+    const userId = req.user!.userId;
     const projectId = req.query.projectId as string;
 
     if (!projectId) throw new ApiError('projectId is required', 400);
@@ -96,12 +96,12 @@ export const getTasks = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // POST /tasks
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const createTask = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId || (req as any).userId;
+    const userId = req.user!.userId;
 
     // Validate
     const result = CreateTaskSchema.safeParse(req.body);
@@ -195,12 +195,12 @@ export const createTask = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // PATCH /tasks/:id
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const updateTask = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId || (req as any).userId;
+    const userId = req.user!.userId;
     const id = req.params.id as string;
 
     const task = await prisma.task.findUnique({
@@ -275,13 +275,13 @@ export const updateTask = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // PATCH /tasks/:id/move
 // Move task to new column + reorder
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const moveTask = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId || (req as any).userId;
+    const userId = req.user!.userId;
     const id = req.params.id as string;
 
     const { status, position } = req.body;
@@ -308,12 +308,12 @@ export const moveTask = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // DELETE /tasks/:id (soft delete)
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const deleteTask = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId || (req as any).userId;
+    const userId = req.user!.userId;
     const id = req.params.id as string;
 
     const task = await prisma.task.findUnique({
@@ -334,14 +334,14 @@ export const deleteTask = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // GET /tasks/my-tasks
 // Get all tasks assigned to current user
 // across all projects and workspaces
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getMyTasks = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId || (req as any).userId;
+    const userId = req.user!.userId;
     const workspaceId = req.query.workspaceId as string | undefined;
 
     const tasks = await prisma.task.findMany({

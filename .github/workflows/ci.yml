@@ -2,13 +2,13 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, feature/update-ui]
   pull_request:
     branches: [main, master]
 
 jobs:
   api-quality-check:
-    name: API (Lint, Typecheck & Tests)
+    name: API (Lint, Typecheck, Security & Tests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -28,6 +28,9 @@ jobs:
       - name: Install API Dependencies
         run: npm ci
 
+      - name: Security Audit (API)
+        run: npm audit --audit-level=high
+
       - name: Generate Prisma Client
         run: npx prisma generate
 
@@ -44,7 +47,7 @@ jobs:
         run: npm run build
 
   client-quality-check:
-    name: Client (Lint, Typecheck & Build)
+    name: Client (Lint, Typecheck, Security, Tests & Build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -64,11 +67,17 @@ jobs:
       - name: Install Client Dependencies
         run: npm ci
 
+      - name: Security Audit (Client)
+        run: npm audit --audit-level=high
+
       - name: Lint Client
         run: npm run lint
 
       - name: Typecheck Client
         run: npx tsc --noEmit
+
+      - name: Run Client Tests
+        run: npm test
 
       - name: Build Client
         run: npm run build

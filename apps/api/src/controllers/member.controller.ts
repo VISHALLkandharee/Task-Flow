@@ -1,15 +1,15 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import  ApiError  from '../lib/ApiError';
 import { asyncHandler } from '../lib/asyncHandler';
 
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // GET /members?workspaceId=xxx
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getMembers = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const workspaceId = req.query.workspaceId as string;
 
     if (!workspaceId) throw new ApiError('workspaceId required', 400);
@@ -40,12 +40,12 @@ export const getMembers = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
-// PATCH /members/:id — update role
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// PATCH /members/:id â€” update role
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const updateMemberRole = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const memberId = req.params.id as string;
 
     const { role } = req.body;
@@ -91,12 +91,12 @@ export const updateMemberRole = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
-// DELETE /members/:id — remove member
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// DELETE /members/:id â€” remove member
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const removeMember = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const memberId = req.params.id as string;
 
     const targetMember = await prisma.member.findUnique({
