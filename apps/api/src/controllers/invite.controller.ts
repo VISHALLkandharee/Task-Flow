@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import ApiError from '../lib/ApiError';
@@ -12,12 +12,12 @@ const InviteSchema = z.object({
   role: z.enum(['ADMIN', 'MEMBER']).optional(),
 });
 
-// ─────────────────────────────────────────
-// POST /invites — send an invite
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /invites â€” send an invite
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const sendInvite = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
 
     // Validate input
     const result = InviteSchema.safeParse(req.body);
@@ -27,7 +27,7 @@ export const sendInvite = asyncHandler(
 
     const { email, workspaceId, role } = result.data;
 
-    // Check current user's role — only OWNER/ADMIN can invite
+    // Check current user's role â€” only OWNER/ADMIN can invite
     const currentMember = await prisma.member.findUnique({
       where: {
         userId_workspaceId: { userId, workspaceId },
@@ -111,7 +111,7 @@ export const sendInvite = asyncHandler(
       },
     });
 
-    // Queue email — non-blocking, instant response
+    // Queue email â€” non-blocking, instant response
     await sendInviteEmail({
       to: email,
       inviterName: currentMember.user.name,
@@ -131,10 +131,10 @@ export const sendInvite = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
-// GET /invites/:token — get invite details
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET /invites/:token â€” get invite details
 // (used on the accept invite page)
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getInvite = asyncHandler(
   async (req: Request, res: Response) => {
     const token = req.params.token as string;
@@ -170,12 +170,12 @@ export const getInvite = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
-// POST /invites/:token/accept — accept invite
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /invites/:token/accept â€” accept invite
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const acceptInvite = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const token = req.params.token as string;
 
     const invite = await prisma.invite.findUnique({
@@ -242,13 +242,13 @@ export const acceptInvite = asyncHandler(
   }
 );
 
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // GET /invites?workspaceId=xxx
 // List all invites for a workspace
-// ─────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getWorkspaceInvites = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const workspaceId = req.query.workspaceId as string;
 
     if (!workspaceId) throw new ApiError('workspaceId required', 400);

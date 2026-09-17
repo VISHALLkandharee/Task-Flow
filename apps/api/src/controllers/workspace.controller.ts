@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import ApiError from '../lib/ApiError';
 import { asyncHandler } from '../lib/asyncHandler';
@@ -10,7 +10,7 @@ const CreateWorkspaceSchema = z.object({
 
 export const createWorkspace = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
 
     const result = CreateWorkspaceSchema.safeParse(req.body);
     if (!result.success) {

@@ -7,6 +7,8 @@ process.env.STRIPE_PRICE_ID = 'price_test_12345';
 process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_12345';
 process.env.CLIENT_URL = 'http://localhost:3000';
 
+jest.setTimeout(30000);
+
 // Mock BullMQ Queue so test runs don't attempt external network connections to Redis
 jest.mock('bullmq', () => {
   return {

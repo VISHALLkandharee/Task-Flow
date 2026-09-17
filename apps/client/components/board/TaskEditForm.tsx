@@ -143,12 +143,14 @@ export default function TaskEditForm({
       {/* Title */}
       <div>
         <label
+          htmlFor="task-title"
           className="block text-xs font-medium text-gray-500
           uppercase tracking-wide mb-1.5"
         >
           Title
         </label>
         <input
+          id="task-title"
           {...register("title")}
           className="w-full px-3 py-2 border border-gray-200
           rounded-lg text-sm text-gray-900 focus:outline-none
@@ -235,7 +237,7 @@ export default function TaskEditForm({
           <option value="">Unassigned</option>
           {members?.map((m) => (
             <option key={m.userId} value={m.userId}>
-              {m.user.name}
+              {m.user?.name ?? m.user?.email ?? m.userId}
               {m.role === "OWNER"
                 ? " (Owner)"
                 : m.role === "ADMIN"
@@ -283,12 +285,14 @@ export default function TaskEditForm({
       {/* Description */}
       <div>
         <label
+          htmlFor="task-description"
           className="block text-xs font-medium text-gray-500
           uppercase tracking-wide mb-1.5"
         >
           Description
         </label>
         <textarea
+          id="task-description"
           {...register("description")}
           rows={3}
           placeholder="Add more details about this task..."

@@ -17,7 +17,7 @@ const protectUser = (req:Request, res:Response, next:NextFunction) => {
         //inject user in Request
 
 
-        (req as any).user = payload 
+        req.user = payload;
 
         next()
 
