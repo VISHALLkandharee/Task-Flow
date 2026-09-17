@@ -1,4 +1,4 @@
-﻿import { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import ApiError from '../lib/ApiError';
 import { asyncHandler } from '../lib/asyncHandler';
@@ -103,6 +103,10 @@ export const changePassword = asyncHandler(
       where: { id: userId },
     });
     if (!user) throw new ApiError('User not found', 404);
+
+    if (!user.password) {
+      throw new ApiError('This account was created with Google Sign-In and does not have a password', 400);
+    }
 
     // Verify current password
     const isValid = await bcrypt.compare(currentPassword, user.password);

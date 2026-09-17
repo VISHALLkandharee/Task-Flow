@@ -1,9 +1,12 @@
-﻿import { asyncHandler } from "../lib/asyncHandler";
+import { asyncHandler } from "../lib/asyncHandler";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import ApiError from "../lib/ApiError";
 import bcrypt from "bcryptjs";
 import { generateAccessToken, generateRefreshToken, setTokenCookies, verifyRefreshToken } from "../lib/jwt";
+import { OAuth2Client } from "google-auth-library";
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 
 
@@ -100,9 +103,9 @@ export const loginUser = asyncHandler(async (req:Request, res:Response) => {
     },
   })
 
-  if(!user) throw new ApiError("Incorrect email or password", 404)
+  if(!user || !user.password) throw new ApiError("Incorrect email or password", 401)
 
-    const isPasswordValid = await bcrypt.compare(password, user.password)
+  const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if(!isPasswordValid) throw new ApiError("Incorrect email or password", 401 )
 
@@ -215,3 +218,139 @@ export const getMe = asyncHandler(async(req:Request, res:Response) => {
   })
   
 })
+
+// Google OAuth Login & Sign-up
+export const googleAuth = asyncHandler(async (req: Request, res: Response) => {
+  const { idToken, credential } = req.body;
+  const token = idToken || credential;
+
+  if (!token) {
+    throw new ApiError("Google ID token is required", 400);
+  }
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch (error: any) {
+    throw new ApiError("Invalid or expired Google token", 401);
+  }
+
+  if (!payload || !payload.email) {
+    throw new ApiError("Unable to extract Google user information", 400);
+  }
+
+  const googleId = payload.sub;
+  const email = payload.email.toLowerCase();
+  const name = payload.name || email.split("@")[0];
+  const avatarUrl = payload.picture || null;
+
+  // Check if user exists by googleId or email
+  let user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { googleId },
+        { email },
+      ],
+    },
+    include: {
+      members: {
+        include: { workspace: true },
+        orderBy: { joinedAt: "asc" },
+      },
+    },
+  });
+
+  if (user) {
+    // If user exists by email but googleId was not yet linked, link it now
+    if (!user.googleId || (!user.avatarUrl && avatarUrl)) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId: user.googleId || googleId,
+          avatarUrl: user.avatarUrl || avatarUrl,
+        },
+        include: {
+          members: {
+            include: { workspace: true },
+            orderBy: { joinedAt: "asc" },
+          },
+        },
+      });
+    }
+  } else {
+    // User does not exist -> Create new user with default workspace
+    const baseSlug = `${name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").trim() || "workspace"}`;
+    const slug = `${baseSlug}-${Date.now()}`;
+
+    const created = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          googleId,
+          avatarUrl,
+        },
+      });
+
+      const newWorkspace = await tx.workspace.create({
+        data: {
+          name: `${name}'s Workspace`,
+          slug,
+          members: {
+            create: {
+              userId: newUser.id,
+              role: "OWNER",
+            },
+          },
+        },
+      });
+
+      return { newUser, newWorkspace };
+    });
+
+    user = await prisma.user.findUnique({
+      where: { id: created.newUser.id },
+      include: {
+        members: {
+          include: { workspace: true },
+          orderBy: { joinedAt: "asc" },
+        },
+      },
+    });
+  }
+
+  if (!user) {
+    throw new ApiError("Failed to process Google authentication", 500);
+  }
+
+  const accessToken = generateAccessToken({
+    userId: user.id,
+    email: user.email,
+  });
+
+  const refreshToken = generateRefreshToken({
+    userId: user.id,
+    email: user.email,
+  });
+
+  setTokenCookies(res, accessToken, refreshToken);
+
+  res.status(200).json({
+    message: "Google authentication successful",
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+    },
+    workspace: user.members[0]?.workspace || null,
+    workspaces: user.members.map((m) => ({
+      ...m.workspace,
+      role: m.role,
+    })),
+  });
+});
