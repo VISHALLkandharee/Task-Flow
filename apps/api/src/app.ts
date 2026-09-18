@@ -22,10 +22,14 @@ import { rateLimiter } from './middlewares/Rate_Limiter';
 import ErrorHandlerMiddleware from './middlewares/Error_Handler';
 
 // Initialize background jobs only in non-test environments
-if (process.env.NODE_ENV !== 'test') {
-  require('./jobs/emailWorker');
-  require('./jobs/cronQueue');
-  require('./jobs/cronWorker');
+if (process.env.NODE_ENV !== 'test' && process.env.ENABLE_BACKGROUND_JOBS !== 'false') {
+  try {
+    require('./jobs/emailWorker');
+    require('./jobs/cronQueue');
+    require('./jobs/cronWorker');
+  } catch (err: any) {
+    console.error('Failed to initialize background workers:', err.message);
+  }
 }
 
 const app = express();

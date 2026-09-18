@@ -18,6 +18,10 @@ export const cronQueue = new Queue('cron', {
   },
 });
 
+cronQueue.on('error', (err) => {
+  logger.error({ err: err.message }, 'Cron queue encountered Redis/connection error');
+});
+
 // ─────────────────────────────────────────
 // Register Repeatable Jobs
 // ─────────────────────────────────────────

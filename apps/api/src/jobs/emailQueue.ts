@@ -45,6 +45,10 @@ export const emailQueue = new Queue('emails', {
   },
 });
 
+emailQueue.on('error', (err) => {
+  logger.error({ err: err.message }, 'Email queue encountered Redis/connection error');
+});
+
 // ─────────────────────────────────────────
 // Helper functions to add jobs to queue
 // Use these in your controllers

@@ -113,11 +113,15 @@ export const cronWorker = new Worker(
   }
 );
 
-// Worker event listeners for logging
+// Worker event listeners for logging & fault tolerance
 cronWorker.on('completed', (job) => {
   logger.info({ jobId: job.id, jobName: job.name }, 'Cron job completed successfully');
 });
 
 cronWorker.on('failed', (job, err) => {
   logger.error({ jobId: job?.id, jobName: job?.name, err: err.message }, 'Cron job failed');
+});
+
+cronWorker.on('error', (err) => {
+  logger.error({ err: err.message }, 'Cron worker encountered Redis/connection error');
 });
