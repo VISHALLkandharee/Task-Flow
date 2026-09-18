@@ -30,11 +30,6 @@ httpServer.listen(PORT, () => {
   logger.info({ webhookUrl: `http://localhost:${PORT}/api/v1/billing/webhook` }, 'Stripe webhook listening endpoint ready');
 });
 
-// Process error protection for external services (e.g. Redis quota or network blips)
-process.on('unhandledRejection', (reason: any) => {
-  logger.error({ err: reason?.message || reason }, 'Unhandled Rejection caught — server staying alive');
-});
-
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received: shutting down gracefully');

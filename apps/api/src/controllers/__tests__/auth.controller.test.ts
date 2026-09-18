@@ -85,7 +85,7 @@ describe('Auth Controller Endpoints', () => {
   });
 
   describe('POST /api/v1/auth/login', () => {
-    it('returns 401 on non-existent email (no account enumeration)', async () => {
+    it('returns 404 on non-existent email', async () => {
       (prisma.user.findFirst as jest.Mock).mockResolvedValue(null);
 
       const res = await request(app)
@@ -95,9 +95,7 @@ describe('Auth Controller Endpoints', () => {
           password: 'Password123',
         });
 
-      // 401 is intentional: we never reveal whether the email exists
-      // (prevents account enumeration attacks)
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/incorrect email or password/i);
     });
 

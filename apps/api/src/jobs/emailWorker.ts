@@ -216,7 +216,7 @@ export const emailWorker = new Worker(
 );
 
 // ─────────────────────────────────────────
-// Worker event listeners — for logging & fault tolerance
+// Worker event listeners — for logging
 // ─────────────────────────────────────────
 emailWorker.on('completed', (job) => {
   logger.info({ jobId: job.id, jobName: job.name }, 'Email worker job completed');
@@ -224,8 +224,4 @@ emailWorker.on('completed', (job) => {
 
 emailWorker.on('failed', (job, err) => {
   logger.error({ jobId: job?.id, jobName: job?.name, err: err.message }, 'Email worker job failed');
-});
-
-emailWorker.on('error', (err) => {
-  logger.error({ err: err.message }, 'Email worker encountered Redis/connection error');
 });

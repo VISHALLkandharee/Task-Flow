@@ -8,7 +8,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
 // ─────────────────────────────────────────
 // Validation Schema
@@ -80,32 +79,13 @@ export default function LoginPage() {
         Sign in to your account to continue
       </p>
 
-      {/* Server Error */}
-      {serverError && (
-        <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3 mb-4">
-          {serverError}
-        </div>
-      )}
-
-      {/* Google Sign In */}
-      <GoogleSignInButton
-        text="signin_with"
-        onError={(err) => setServerError(err)}
-      />
-
-      {/* Divider */}
-      <div className="relative my-5">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-500 font-medium">
-            Or continue with email
-          </span>
-        </div>
-      </div>
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Server Error */}
+        {serverError && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3">
+            {serverError}
+          </div>
+        )}
 
         {/* Email */}
         <div>

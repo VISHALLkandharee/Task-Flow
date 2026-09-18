@@ -104,10 +104,6 @@ export const changePassword = asyncHandler(
     });
     if (!user) throw new ApiError('User not found', 404);
 
-    if (!user.password) {
-      throw new ApiError('This account was created with Google Sign-In and does not have a password', 400);
-    }
-
     // Verify current password
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) {
