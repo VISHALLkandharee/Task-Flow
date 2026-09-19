@@ -104,6 +104,15 @@ export const changePassword = asyncHandler(
     });
     if (!user) throw new ApiError('User not found', 404);
 
+    // Guard: accounts that signed up via Google never set a password.
+    // password is required in schema so it will be '' (empty string) for OAuth users.
+    if (!user.password || user.password.length < 10) {
+      throw new ApiError(
+        'This account does not have a password. Please use your sign-in method (e.g. Google) to access your account.',
+        400
+      );
+    }
+
     // Verify current password
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) {

@@ -110,6 +110,9 @@ export const cronWorker = new Worker(
   {
     connection: redis,
     concurrency: 1,
+    stalledInterval: 120000,  // check stalled jobs every 2 mins (runs daily so no rush)
+    maxStalledCount: 2,
+    drainDelay: 30,           // poll every 30s when idle — cron runs once/day
   }
 );
 
