@@ -1,9 +1,9 @@
-FROM node:20-alpine AS base
-
-# Install OpenSSL and libc compatibility for Prisma engine on Alpine Linux
-RUN apk add --no-cache openssl libc6-compat
+FROM node:20-slim AS base
 
 WORKDIR /app
+
+# OpenSSL is required by Prisma's query engine at runtime
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 COPY package*.json ./

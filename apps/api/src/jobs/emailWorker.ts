@@ -211,7 +211,10 @@ export const emailWorker = new Worker(
   },
   {
     connection: redis,
-    concurrency: 5,
+    concurrency: 2,
+    stalledInterval: 60000,   // check stalled jobs every 60s (default: 30s)
+    maxStalledCount: 2,       // mark stalled after 2 checks
+    drainDelay: 10,           // poll queue every 10s when idle (reduces Redis commands)
   }
 );
 
